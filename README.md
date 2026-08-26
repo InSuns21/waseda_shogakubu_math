@@ -4,13 +4,13 @@
 
 ## Web で読む
 
-GitHub Pages から、ブラウザ上で KaTeX による数式表示付きの教材を閲覧できる構成です。
+GitHub Pages から、ブラウザ上で KaTeX による数式表示付きの教材を閲覧できます。
 
 - GitHub Pages: https://insuns21.github.io/waseda_shogakubu_math/
 - 解答解説一覧: https://insuns21.github.io/waseda_shogakubu_math/#/answers
 - 問題文一覧: https://insuns21.github.io/waseda_shogakubu_math/#/problems
 
-> GitHub Pages を初めて有効化する場合は、Repository Settings → Pages → Build and deployment → Source で **GitHub Actions** を選択してください。
+GitHub Pages の Source は **GitHub Actions** を使用します。
 
 ## ディレクトリ構成
 
@@ -19,41 +19,64 @@ GitHub Pages から、ブラウザ上で KaTeX による数式表示付きの教
 ├── ans/                  # 年別の解答・解説 Markdown
 ├── probrems/             # 年別の問題文 Markdown
 ├── site/                 # GitHub Pages 用の Docsify 設定・索引
-├── scripts/              # CI 用の検証スクリプト
+├── scripts/              # 数式記法の移行・CI 検証スクリプト
 └── .github/workflows/    # KaTeX 検証・Pages 公開
 ```
 
 ## 解答・解説
 
-`ans/2001.md` 〜 `ans/2026.md` に年別の解答・解説を置いています。GitHub Pages の公開時には、この Markdown をそのままサイトへ配置するため、Web 用本文を別管理する必要はありません。
+`ans/2001.md` 〜 `ans/2026.md` に年別の解答・解説を置いています。GitHub Pages ではこの Markdown を直接読み込みます。
+
+解答部分は Web 上では初期状態で折りたたまれ、「解答を見る」を押すと展開されます。Markdown 原文には表示専用の `<details>` を埋め込まず、表示ロジックは `site/index.html` 側で管理します。
 
 ## 問題文
 
 `probrems/2001.md` 〜 `probrems/2026.md` に年別の問題文を置いています。
 
-## 数式表記と KaTeX 検証
+## 数式表記
 
-数式は KaTeX で表示することを前提にしています。Markdown の更新時には GitHub Actions の `Validate KaTeX` が走り、`ans/` と `probrems/` 内の `$...$`、`$$...$$`、`\\(...\\)`、`\\[...\\]` を KaTeX で実際にパースします。
+このリポジトリでは Pages / Docsify / KaTeX で安定して表示するため、数式区切りを次に統一します。
 
-ローカルでも次のコマンドで同じ検証を実行できます。
+- インライン数式: `$...$`
+- ディスプレイ数式: `$$...$$`
+
+`\\(...\\)` と `\\[...\\]` は使用しません。これらは KaTeX 自体では有効な区切りですが、現在利用している Docsify の数式プラグインでは安定して認識されず、Web ページ上で数式がそのまま文字列として表示される原因になるためです。
+
+## KaTeX CI
+
+Markdown の更新時には GitHub Actions の `Validate KaTeX` が次を検証します。
+
+1. `\\(...\\)` / `\\[...\\]` が残っていないこと
+2. `$...$` / `$$...$$` の数式を KaTeX が実際にパースできること
+3. 閉じていない数式区切りや KaTeX 構文エラーがないこと
+
+ローカルでは次のコマンドで検証できます。
 
 ```bash
 npm install
+npm run check:math-delimiters
 npm run validate:katex
 ```
 
-KaTeX が解釈できないコマンド、閉じていない数式デリミタ、構文エラーがある場合は CI が失敗します。
+旧区切りを `$...$` / `$$...$$` に一括移行する場合は次を実行します。
+
+```bash
+npm run normalize:math
+```
+
+コードブロックおよびインラインコード内は移行対象外です。
 
 ## GitHub Pages の仕組み
 
-公開には Docsify を利用します。`main` ブランチ更新時に Pages 用ワークフローが次を行います。
+`Deploy GitHub Pages` workflow は次の順序で処理します。
 
-1. `site/` を公開用ディレクトリへコピー
-2. `ans/` と `probrems/` を同じ公開物へコピー
-3. GitHub Pages artifact を作成
-4. GitHub Pages へデプロイ
+1. 旧数式区切りが残っていれば Markdown 原文を `$...$` / `$$...$$` に正規化して `main` へコミット
+2. 数式区切り規約を検証
+3. 全数式を KaTeX で実パース検証
+4. `site/`、`ans/`、`probrems/` を Pages artifact にまとめる
+5. GitHub Pages へデプロイ
 
-そのため、解答解説は通常どおり `ans/*.md` を編集すれば Web 側にも反映されます。
+以後は通常どおり `ans/*.md` / `probrems/*.md` を編集すれば Web 側にも反映されます。
 
 ## 注意
 
