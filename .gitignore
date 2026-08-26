@@ -1,2 +1,4 @@
 /.vscode
 /data
+/node_modules
+/_site
