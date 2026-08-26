@@ -1,0 +1,11 @@
+{
+  "name": "waseda-shogakubu-math",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate:katex": "node scripts/validate-katex.mjs"
+  },
+  "devDependencies": {
+    "katex": "0.18.4"
+  }
+}
