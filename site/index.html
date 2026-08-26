@@ -20,12 +20,81 @@
     .sidebar ul li a {
       white-space: normal;
     }
+    .solution-details {
+      margin: 1.25rem 0 2rem;
+      border: 1px solid #d8dee4;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .solution-details > summary {
+      cursor: pointer;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      user-select: none;
+    }
+    .solution-details[open] > summary {
+      border-bottom: 1px solid #d8dee4;
+    }
+    .solution-body {
+      padding: 0.25rem 1rem 1rem;
+    }
+    .solution-body > :first-child {
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
   <div id="app">読み込み中...</div>
 
   <script>
+    function collapseSolutionSections(hook) {
+      hook.doneEach(function () {
+        if (!window.location.hash.startsWith('#/ans/')) return;
+
+        const root = document.querySelector('.markdown-section');
+        if (!root) return;
+
+        const solutionHeadings = Array.from(root.querySelectorAll('h3')).filter(function (heading) {
+          const text = heading.textContent.trim();
+          return /(?:^|\s)解答(?:解説|・解説)?$/.test(text);
+        });
+
+        solutionHeadings.forEach(function (heading) {
+          if (heading.closest('.solution-details')) return;
+
+          const title = heading.textContent.trim();
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          const body = document.createElement('div');
+
+          details.className = 'solution-details';
+          body.className = 'solution-body';
+          summary.textContent = title + 'を見る';
+
+          details.addEventListener('toggle', function () {
+            summary.textContent = title + (details.open ? 'を閉じる' : 'を見る');
+          });
+
+          const parent = heading.parentNode;
+          let node = heading.nextSibling;
+
+          parent.insertBefore(details, heading);
+          details.appendChild(summary);
+          details.appendChild(body);
+          heading.remove();
+
+          while (node) {
+            const next = node.nextSibling;
+            if (node.nodeType === Node.ELEMENT_NODE && /^(H2|H3)$/.test(node.tagName)) {
+              break;
+            }
+            body.appendChild(node);
+            node = next;
+          }
+        });
+      });
+    }
+
     window.$docsify = {
       name: '早稲田商学部 数学',
       repo: 'https://github.com/InSuns21/waseda_shogakubu_math',
@@ -33,6 +102,7 @@
       loadSidebar: true,
       subMaxLevel: 3,
       auto2top: true,
+      plugins: [collapseSolutionSections],
       search: {
         placeholder: 'サイト内検索',
         noData: '該当するページがありません',
