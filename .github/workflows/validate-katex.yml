@@ -6,6 +6,7 @@ on:
       - 'ans/**/*.md'
       - 'probrems/**/*.md'
       - 'scripts/validate-katex.mjs'
+      - 'scripts/prepare-pages-math.mjs'
       - 'package.json'
       - '.github/workflows/validate-katex.yml'
   pull_request:
@@ -13,6 +14,7 @@ on:
       - 'ans/**/*.md'
       - 'probrems/**/*.md'
       - 'scripts/validate-katex.mjs'
+      - 'scripts/prepare-pages-math.mjs'
       - 'package.json'
       - '.github/workflows/validate-katex.yml'
   workflow_dispatch:
@@ -34,6 +36,9 @@ jobs:
 
       - name: Install KaTeX
         run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Reject legacy math delimiters
+        run: npm run check:math-delimiters
 
       - name: Validate Markdown math with KaTeX
         run: npm run validate:katex
