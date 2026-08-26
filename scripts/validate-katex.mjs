@@ -163,6 +163,63 @@ function extractMath(text, file) {
   return { expressions, errors };
 }
 
+function findRawMathOutsideDelimiters(text, file) {
+  const errors = [];
+
+  for (let i = 0; i < text.length;) {
+    if (text.startsWith('$$', i) && !isEscaped(text, i)) {
+      const close = findClosingDollar(text, i + 2, true);
+      if (close === -1) break;
+      i = close + 2;
+      continue;
+    }
+
+    if (text.startsWith('\\[', i) && !isEscaped(text, i)) {
+      const close = findClosingBackslashDelimiter(text, i + 2, '\\]');
+      if (close === -1) break;
+      i = close + 2;
+      continue;
+    }
+
+    if (text.startsWith('\\(', i) && !isEscaped(text, i)) {
+      const close = findClosingBackslashDelimiter(text, i + 2, '\\)');
+      if (close === -1) break;
+      i = close + 2;
+      continue;
+    }
+
+    if (text[i] === '$' && !isEscaped(text, i)) {
+      const close = findClosingDollar(text, i + 1, false);
+      if (close === -1) {
+        i += 1;
+        continue;
+      }
+      i = close + 1;
+      continue;
+    }
+
+    if (text[i] === '\\' && !isEscaped(text, i) && /[A-Za-z]/.test(text[i + 1] ?? '')) {
+      const match = text.slice(i).match(/^\\[A-Za-z]+/);
+      const command = match ? match[0] : '\\';
+      errors.push(
+        `${file}:${lineNumberAt(text, i)}: raw TeX command ${command} is outside math delimiters`
+      );
+      i += command.length;
+      continue;
+    }
+
+    if ((text[i] === '^' || text[i] === '_') && !isEscaped(text, i)) {
+      errors.push(
+        `${file}:${lineNumberAt(text, i)}: ${text[i]} appears outside math delimiters`
+      );
+    }
+
+    i += 1;
+  }
+
+  return errors;
+}
+
 const files = roots.flatMap(walkMarkdown).sort();
 const failures = [];
 let expressionCount = 0;
@@ -173,6 +230,7 @@ for (const file of files) {
   const { expressions, errors } = extractMath(text, file);
 
   failures.push(...errors);
+  failures.push(...findRawMathOutsideDelimiters(text, file));
   expressionCount += expressions.length;
 
   for (const { expression, displayMode, line } of expressions) {
