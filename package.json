@@ -6,6 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
+    "normalize:math": "node scripts/prepare-pages-math.mjs ans probrems",
+    "check:math-delimiters": "node scripts/prepare-pages-math.mjs --check ans probrems",
     "validate:katex": "node scripts/validate-katex.mjs"
   },
   "devDependencies": {
