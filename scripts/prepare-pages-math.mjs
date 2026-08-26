@@ -1,9 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const roots = process.argv.slice(2);
+const args = process.argv.slice(2);
+const checkOnly = args[0] === '--check';
+const roots = checkOnly ? args.slice(1) : args;
+
 if (roots.length === 0) {
-  console.error('Usage: node scripts/prepare-pages-math.mjs <dir> [dir ...]');
+  console.error('Usage: node scripts/prepare-pages-math.mjs [--check] <dir> [dir ...]');
   process.exit(2);
 }
 
@@ -137,7 +140,7 @@ function normalizeMarkdown(text, file) {
 const files = roots.flatMap(walkMarkdown).sort();
 let inlinePairs = 0;
 let displayPairs = 0;
-let changedFiles = 0;
+const changedFiles = [];
 
 for (const file of files) {
   const original = fs.readFileSync(file, 'utf8');
@@ -147,11 +150,18 @@ for (const file of files) {
   displayPairs += counts.displayOpen;
 
   if (normalized !== original) {
-    fs.writeFileSync(file, normalized, 'utf8');
-    changedFiles += 1;
+    changedFiles.push(file);
+    if (!checkOnly) fs.writeFileSync(file, normalized, 'utf8');
   }
 }
 
+if (checkOnly && changedFiles.length > 0) {
+  console.error('Legacy math delimiters are not allowed. Use $...$ / $$...$$ instead:');
+  for (const file of changedFiles) console.error(`- ${file}`);
+  process.exit(1);
+}
+
+const mode = checkOnly ? 'check' : 'normalization';
 console.log(
-  `Pages math normalization complete: ${inlinePairs} inline pair(s), ${displayPairs} display pair(s), ${changedFiles}/${files.length} Markdown file(s) changed.`
+  `Math delimiter ${mode} complete: ${inlinePairs} inline pair(s), ${displayPairs} display pair(s), ${changedFiles.length}/${files.length} Markdown file(s) ${checkOnly ? 'need migration' : 'changed'}.`
 );
