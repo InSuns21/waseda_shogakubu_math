@@ -1,0 +1,39 @@
+name: Validate KaTeX
+
+on:
+  push:
+    paths:
+      - 'ans/**/*.md'
+      - 'probrems/**/*.md'
+      - 'scripts/validate-katex.mjs'
+      - 'package.json'
+      - '.github/workflows/validate-katex.yml'
+  pull_request:
+    paths:
+      - 'ans/**/*.md'
+      - 'probrems/**/*.md'
+      - 'scripts/validate-katex.mjs'
+      - 'package.json'
+      - '.github/workflows/validate-katex.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-katex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install KaTeX
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Validate Markdown math with KaTeX
+        run: npm run validate:katex
