@@ -2,6 +2,9 @@
   "name": "waseda-shogakubu-math",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "validate:katex": "node scripts/validate-katex.mjs"
   },
