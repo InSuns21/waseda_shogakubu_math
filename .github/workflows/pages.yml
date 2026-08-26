@@ -8,6 +8,8 @@ on:
       - 'ans/**/*.md'
       - 'probrems/**/*.md'
       - 'site/**'
+      - 'scripts/validate-katex.mjs'
+      - 'package.json'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -27,6 +29,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install KaTeX
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Validate Markdown math with KaTeX
+        run: npm run validate:katex
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
